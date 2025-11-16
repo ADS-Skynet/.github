@@ -1,4 +1,4 @@
-# ADS-Skynet
+# Skynet
 
 **Modular Autonomous Driving System for Lane Keeping Assistance**
 
