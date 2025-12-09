@@ -13,26 +13,26 @@ A distributed, real-time autonomous driving system supporting both simulation (C
 │                        ADS-Skynet Ecosystem                          │
 ├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│  ┌─────────────┐                                 ┌──────────────┐   │
-│  │   CARLA     │                                 │    Viewer    │   │
-│  │  Simulator  │                                 │   (Web UI)   │   │
-│  └──────┬──────┘                                 └──────▲───────┘   │
+│  ┌─────────────┐                                 ┌──────────────┐    │
+│  │   CARLA     │                                 │    Viewer    │    │
+│  │  Simulator  │                                 │   (Web UI)   │    │
+│  └──────┬──────┘                                 └──────▲───────┘    │
 │         │                                               │            │
 │         │ SHM/ZMQ                            WebSocket  │            │
 │         ▼                                     (8080-81) │            │
-│  ┌─────────────┐          ┌──────────────┐             │            │
-│  │ Simulation  │◄────────►│     LKAS     │◄────────────┘            │
-│  │  (Client)   │  ZMQ     │  Detection + │      ZMQ                 │
-│  │             │  5560-63 │   Decision   │    (5557-59)             │
-│  └─────────────┘          └──────┬───────┘                          │
+│  ┌─────────────┐          ┌──────────────┐             │             │
+│  │ Simulation  │◄────────►│     LKAS     │◄────────────┘             │
+│  │  (Client)   │  ZMQ     │  Detection + │      ZMQ                  │
+│  │             │  5560-63 │   Decision   │    (5557-59)              │
+│  └─────────────┘          └──────┬───────┘                           │
 │                                  │ SHM/ZMQ                           │
-│  ┌─────────────┐                 │                                  │
-│  │   Vehicle   │◄────────────────┘                                  │
-│  │ (Jetracer)  │           ZMQ (5560-63)                            │
-│  │  Hardware   │                                                    │
-│  └─────────────┘                                                    │
+│  ┌─────────────┐                 │                                   │
+│  │   Vehicle   │◄────────────────┘                                   │
+│  │ (Jetracer)  │           ZMQ (5560-63)                             │
+│  │  Hardware   │                                                     │
+│  └─────────────┘                                                     │
 │                                                                      │
-│  All modules depend on skynet-common (shared types & communication) │
+│  All modules depend on skynet-common (shared types & communication)  │
 │                                                                      │
 └──────────────────────────────────────────────────────────────────────┘
 ```
