@@ -99,7 +99,7 @@ simulation --broadcast
 
 ---
 
-### [Viewer](https://github.com/ADS-Skynet/Viewer) - Web Monitoring
+### [Viewer](https://github.com/ADS-Skynet/Web-viewer) - Web Monitoring
 **Web-based Remote Viewer with WebSocket Streaming**
 
 Real-time monitoring and control interface for the autonomous driving system with optimized binary streaming.
@@ -123,7 +123,7 @@ Real-time monitoring and control interface for the autonomous driving system wit
   - Rendering offloaded to laptop (vehicle CPU stays free)
 
 ```bash
-pip install git+https://github.com/ADS-Skynet/Viewer.git
+pip install git+https://github.com/ADS-Skynet/Web-viewer.git
 viewer --port 8080  # HTTP server at 8080, WebSocket at 8081
 # Open browser: http://localhost:8080
 ```
@@ -164,7 +164,7 @@ pip install git+https://github.com/ADS-Skynet/Common.git
 
 ---
 
-### [Vehicle](https://github.com/ADS-Skynet/Vehicle) - Hardware Integration
+### [Vehicle](https://github.com/ADS-Skynet/Vehicle-jetracer) - Hardware Integration
 **Real Jetracer Vehicle Support**
 
 Hardware loop for running the autonomous driving system on actual Jetracer vehicles.
@@ -186,7 +186,7 @@ Hardware loop for running the autonomous driving system on actual Jetracer vehic
   - Hardware diagnostics
 
 ```bash
-pip install git+https://github.com/ADS-Skynet/Vehicle.git
+pip install git+https://github.com/ADS-Skynet/Vehicle-jetracer.git
 vehicle --device /dev/video4 --publish-state-hz 10
 ```
 
@@ -215,7 +215,7 @@ pip install git+https://github.com/ADS-Skynet/Carla-client.git
 simulation --broadcast
 
 # Terminal 4: Start Web Viewer (Optional)
-pip install git+https://github.com/ADS-Skynet/Viewer.git
+pip install git+https://github.com/ADS-Skynet/Web-viewer.git
 viewer --port 8080
 
 # Open browser: http://localhost:8080
@@ -225,7 +225,7 @@ viewer --port 8080
 
 ```bash
 # On Jetracer device: Start vehicle hardware loop
-pip install git+https://github.com/ADS-Skynet/Vehicle.git
+pip install git+https://github.com/ADS-Skynet/Vehicle-jetracer.git
 vehicle --device /dev/video4 --publish-state-hz 10
 
 # On same or different machine: Start LKAS
@@ -233,7 +233,7 @@ pip install git+https://github.com/ADS-Skynet/Lkas.git
 lkas --method cv --broadcast
 
 # On monitoring laptop: Start web viewer
-pip install git+https://github.com/ADS-Skynet/Viewer.git
+pip install git+https://github.com/ADS-Skynet/Web-viewer.git
 viewer --port 8080
 # Open browser: http://localhost:8080
 ```
@@ -247,15 +247,15 @@ For local development with all modules:
 git clone git@github.com:ADS-Skynet/Common.git
 git clone git@github.com:ADS-Skynet/Lkas.git
 git clone git@github.com:ADS-Skynet/Carla-client.git
-git clone git@github.com:ADS-Skynet/Vehicle.git
-git clone git@github.com:ADS-Skynet/Viewer.git
+git clone git@github.com:ADS-Skynet/Vehicle-jetracer.git
+git clone git@github.com:ADS-Skynet/Web-viewer.git
 
 # Install in editable mode (order matters - common first!)
 pip install -e ./Common
 pip install -e ./Lkas
 pip install -e ./Carla-client
-pip install -e ./Vehicle
-pip install -e ./Viewer
+pip install -e ./Vehicle-jetracer
+pip install -e ./Web-viewer
 ```
 
 ---
