@@ -19,16 +19,16 @@ A distributed, real-time autonomous driving system supporting both simulation (C
 │  └──────┬──────┘                                 └──────▲───────┘    │
 │         │                                               │            │
 │         │ SHM/ZMQ                            WebSocket  │            │
-│         ▼                                     (8080-81) │            │
+│         ▼                                    (8080/8081)│            │
 │  ┌─────────────┐          ┌──────────────┐             │             │
 │  │ Simulation  │◄────────►│     LKAS     │◄────────────┘             │
-│  │  (Client)   │  ZMQ     │  Detection + │      ZMQ                  │
-│  │             │  5560-63 │   Decision   │    (5557-59)              │
+│  │  (Client)   │  SHM     │  Detection + │      ZMQ                  │
+│  │             │          │   Decision   │    (5557-59)              │
 │  └─────────────┘          └──────┬───────┘                           │
 │                                  │ SHM/ZMQ                           │
 │  ┌─────────────┐                 │                                   │
 │  │   Vehicle   │◄────────────────┘                                   │
-│  │ (Jetracer)  │           ZMQ (5560-63)                             │
+│  │ (Jetracer)  │        ZMQ (5560-62)                                │
 │  │  Hardware   │                                                     │
 │  └─────────────┘                                                     │
 │                                                                      │
@@ -47,8 +47,8 @@ A distributed, real-time autonomous driving system supporting both simulation (C
 Real-time computer vision pipeline for lane detection and vehicle steering control with pluggable algorithms.
 
 - **Detection Methods:**
-  - `cv`: Classical OpenCV (Canny edge detection + Hough Transform) - 5-15ms latency
-  - `dl`: Deep Learning (PyTorch-based segmentation) - 15-30ms latency
+  - `cv`: Classical OpenCV (Canny edge detection + Hough Transform) — 5-15ms latency
+  - `dl`: Deep Learning (PyTorch-based segmentation) — 15-30ms latency
   - Configurable ROI (Region of Interest) masking
   - Temporal smoothing for stability
 
@@ -64,7 +64,7 @@ Real-time computer vision pipeline for lane detection and vehicle steering contr
   - Shared memory IPC for ultra-low latency (~0.01ms)
   - ZMQ broker for distributed messaging
   - Live parameter tuning (detection + decision)
-  - Configurable broadcasting (15-60 FPS)
+  - Configurable broadcasting
 
 ```bash
 pip install git+https://github.com/ADS-Skynet/Lkas.git
@@ -74,35 +74,10 @@ lkas --method dl --broadcast  # Deep learning detection
 
 ---
 
-### [Carla-client](https://github.com/ADS-Skynet/Carla-client) - Simulation Module
-**CARLA Simulator Integration**
-
-Orchestrates the connection between CARLA simulator and the LKAS module.
-
-- **Vehicle Management:**
-  - Spawn and control vehicles
-  - Camera sensor setup
-  - Apply steering/throttle commands
-- **Data Pipeline:**
-  - Frame capture and preprocessing
-  - Shared memory publishing
-  - Real-time data broadcasting
-- **Visualization:**
-  - HUD overlay
-  - Lane visualization
-  - Performance metrics
-
-```bash
-pip install git+https://github.com/ADS-Skynet/Carla-client.git
-simulation --broadcast
-```
-
----
-
 ### [Viewer](https://github.com/ADS-Skynet/Web-viewer) - Web Monitoring
 **Web-based Remote Viewer with WebSocket Streaming**
 
-Real-time monitoring and control interface for the autonomous driving system with optimized binary streaming.
+Real-time monitoring and control interface for the autonomous driving system with optimized binary streaming. Modular architecture with dedicated overlay, WebSocket server, HTTP server, and message handler components.
 
 - **Live Monitoring:**
   - WebSocket-based camera feed streaming (binary, no base64 overhead)
@@ -111,16 +86,16 @@ Real-time monitoring and control interface for the autonomous driving system wit
   - Real-time FPS and latency metrics
 
 - **Remote Control:**
-  - Pause/Resume/Respawn actions
+  - Pause/Resume/Respawn actions (keyboard: `Space` / `R`)
   - Live parameter tuning (Canny, Hough, PID gains)
   - Detection method switching (cv/dl)
   - Throttle policy adjustment
 
 - **Performance:**
   - ~50-100ms total latency (acquisition → browser)
-  - 30 FPS max for bandwidth optimization
+  - Up to 60 FPS WebSocket broadcast
   - JPEG quality: 75 (configurable)
-  - Rendering offloaded to laptop (vehicle CPU stays free)
+  - Rendering offloaded to viewer machine (vehicle CPU stays free)
 
 ```bash
 pip install git+https://github.com/ADS-Skynet/Web-viewer.git
@@ -133,24 +108,25 @@ viewer --port 8080  # HTTP server at 8080, WebSocket at 8081
 ### [Common](https://github.com/ADS-Skynet/Common) - Shared Infrastructure
 **Platform-Independent Shared Components**
 
-Lightweight shared library providing common types, communication utilities, and visualization for all modules.
+Lightweight shared library providing common types, communication utilities, configuration management, and visualization for all modules.
 
 - **Shared Types:**
-  - Lane data models (Lane, LaneDepartureStatus, LaneMetrics)
-  - Detection data (DetectionData with lane coordinates)
-  - Vehicle state (VehicleState telemetry)
+  - Lane data models (`Lane`, `LaneDepartureStatus`, `LaneMetrics`)
+  - Detection data (`DetectionData` with lane coordinates)
+  - Vehicle state (`VehicleState` telemetry)
 
 - **Communication:**
-  - ZMQ pub-sub utilities (ViewerSubscriber, ActionPublisher, ParameterPublisher)
+  - ZMQ pub-sub utilities (`ViewerSubscriber`, `ActionPublisher`, `ParameterPublisher`)
   - Unified message protocols for inter-process communication
 
-- **Visualization:**
-  - LKASVisualizer for rendering lane overlays and HUD
-  - Consistent visual style across all modules
-
 - **Configuration:**
-  - Unified ConfigManager for YAML + dataclasses
-  - Shared configuration schemas
+  - `ConfigManager` — unified YAML + dataclasses config loader
+  - Centralized ZMQ ports, shared memory names, camera settings, and control limits
+  - Single source of truth for all modules
+
+- **Visualization:**
+  - `LKASVisualizer` for rendering lane overlays and HUD
+  - Consistent visual style across all modules
 
 - **Key Features:**
   - Minimal dependencies (no CARLA, PyTorch, or heavy frameworks)
@@ -171,23 +147,24 @@ Hardware loop for running the autonomous driving system on actual Jetracer vehic
 
 - **Hardware Support:**
   - Jetracer motor control integration
-  - Camera capture via V4L2 video device
+  - Camera capture via V4L2 video device (`/dev/video4` by default)
   - Configurable camera device path
 
 - **Communication:**
   - ZMQ integration with LKAS broker
-  - State publishing (telemetry) at configurable Hz
+  - Vehicle state publishing at configurable Hz
   - Parameter subscription for live tuning
   - Action subscription (pause/resume/respawn)
+  - Shared memory channels for ultra-low latency frame and control transfer
 
 - **Testing Utilities:**
-  - Motor test script
-  - Camera test script
-  - Hardware diagnostics
+  - Motor test script (`test_motor.py`)
+  - Camera test script (`test_camera.py`)
 
 ```bash
 pip install git+https://github.com/ADS-Skynet/Vehicle-jetracer.git
 vehicle --device /dev/video4 --publish-state-hz 10
+vehicle --device /dev/video4 --keepalive  # Keep camera alive while paused
 ```
 
 ---
@@ -197,7 +174,7 @@ vehicle --device /dev/video4 --publish-state-hz 10
 ### Prerequisites
 
 - Python 3.10+
-- CARLA Simulator 0.9.16
+- CARLA Simulator 0.9.16 (for simulation mode)
 - CUDA-capable GPU (optional, for deep learning)
 
 ### Simulation Setup (CARLA)
@@ -211,7 +188,6 @@ pip install git+https://github.com/ADS-Skynet/Lkas.git
 lkas --method cv --broadcast  # or --method dl for deep learning
 
 # Terminal 3: Start Simulation (CARLA Client)
-pip install git+https://github.com/ADS-Skynet/Carla-client.git
 simulation --broadcast
 
 # Terminal 4: Start Web Viewer (Optional)
@@ -246,14 +222,12 @@ For local development with all modules:
 # Clone all repositories
 git clone git@github.com:ADS-Skynet/Common.git
 git clone git@github.com:ADS-Skynet/Lkas.git
-git clone git@github.com:ADS-Skynet/Carla-client.git
 git clone git@github.com:ADS-Skynet/Vehicle-jetracer.git
 git clone git@github.com:ADS-Skynet/Web-viewer.git
 
 # Install in editable mode (order matters - common first!)
 pip install -e ./Common
 pip install -e ./Lkas
-pip install -e ./Carla-client
 pip install -e ./Vehicle-jetracer
 pip install -e ./Web-viewer
 ```
@@ -262,15 +236,16 @@ pip install -e ./Web-viewer
 
 ## Key Features
 
-- **Modular Architecture** - Each component runs independently with clean interfaces
-- **Ultra-Low Latency** - Shared memory IPC (~0.01ms) for real-time performance
-- **Pluggable Algorithms** - Switch between CV/DL detection and PD/PID/MPC controllers
-- **Live Tuning** - Adjust detection and decision parameters without restart
-- **Real Hardware Support** - Run on actual Jetracer vehicles with full telemetry
-- **WebSocket Streaming** - Optimized binary streaming (no base64 overhead)
-- **Remote Monitoring** - Web-based viewer accessible from any device
-- **Distributed Deployment** - Run components on different machines via ZMQ
-- **Platform Independent** - Works on Linux, macOS (including M1), and embedded systems
+- **Modular Architecture** — Each component runs independently with clean interfaces
+- **Ultra-Low Latency** — Shared memory IPC (~0.01ms) for real-time performance
+- **Pluggable Algorithms** — Switch between CV/DL detection and PD/PID/MPC controllers
+- **Live Tuning** — Adjust detection and decision parameters without restart
+- **Real Hardware Support** — Run on actual Jetracer vehicles with full telemetry
+- **WebSocket Streaming** — Optimized binary streaming (no base64 overhead)
+- **Remote Monitoring** — Web-based viewer accessible from any device
+- **Distributed Deployment** — Run components on different machines via ZMQ
+- **Platform Independent** — Works on Linux, macOS (including M1), and embedded systems
+- **Unified Config** — Single `config.yaml` (managed by `skynet-common`) shared by all modules
 
 ---
 
@@ -282,7 +257,7 @@ pip install -e ./Web-viewer
 | Decision Latency | <2ms | <2ms |
 | IPC Latency (SHM) | ~0.01ms | ~0.01ms |
 | End-to-End Latency | 10-25ms | 30-50ms |
-| Target FPS | 60+ | 30+ |
+| Target FPS | 30+ | 30+ |
 | GPU Usage | None | ~2GB VRAM |
 | Viewer Latency | +50-100ms | +50-100ms |
 
@@ -297,9 +272,9 @@ pip install -e ./Web-viewer
 | 5557 | LKAS → Viewer | Data broadcast (frames, detections, telemetry) |
 | 5558 | Viewer → LKAS | Action commands (pause/resume/respawn) |
 | 5559 | Viewer → LKAS | Parameter updates (detection + decision tuning) |
-| 5560 | Simulation/Vehicle → LKAS | Frame input (camera feed) |
-| 5562 | Vehicle → LKAS | Vehicle status (telemetry) |
-| 5563 | LKAS → Simulation/Vehicle | Steering output (control commands) |
+| 5560 | LKAS → Servers | Parameter forwarding to detection/decision servers |
+| 5561 | LKAS → Vehicle | Action forwarding to simulation/vehicle |
+| 5562 | Vehicle → LKAS | Vehicle status broadcasting |
 
 ### Web Viewer
 
@@ -310,9 +285,9 @@ pip install -e ./Web-viewer
 
 ### Shared Memory Channels
 
-- **ImageChannel** - Ultra-low latency frame transfer (~0.01ms)
-- **DetectionChannel** - Lane detection results
-- **ControlChannel** - Steering commands
+- **ImageChannel** — Ultra-low latency frame transfer (~0.01ms)
+- **DetectionChannel** — Lane detection results
+- **ControlChannel** — Steering commands
 
 ---
 
@@ -329,7 +304,7 @@ We welcome contributions! Each repository has its own contribution guidelines. P
 
 ## Team
 
-**Skynet Team** - SEA:ME Autonomous Driving Project
+**Skynet Team** — SEA:ME Autonomous Driving Project
 
 ---
 
